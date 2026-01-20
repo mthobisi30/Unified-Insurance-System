@@ -14,9 +14,9 @@ export default function Header() {
       <header className="bg-white shadow-sm border-b border-neutral-300 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-neutral-900">Dashboard</h2>
+            <h2 className="text-2xl font-semibold text-neutral-900">Admin Panel</h2>
             <p className="text-sm text-neutral-700">
-              Welcome back, <span className="font-medium">{user?.firstName}</span>
+              Welcome back, <span className="font-medium">{user?.firstName || "Guest"}</span>
             </p>
           </div>
           <div className="flex items-center space-x-4">

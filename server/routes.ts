@@ -1,10 +1,17 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
+
+// Default user for non-authenticated access
+const DEFAULT_USER = {
+  id: "default-user",
+  email: "user@example.com",
+  firstName: "Guest",
+  lastName: "User",
+};
 
 // Ensure uploads directory exists
 // On Vercel, the only writable directory is /tmp
@@ -44,127 +51,60 @@ const upload = multer({
   },
 });
 
-// Simple authentication middleware - for demo purposes
-// In production, implement proper authentication (e.g., NextAuth, Passport with providers)
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.session && (req.session as any).userId) {
-    return next();
-  }
-  return res.status(401).json({ message: "Unauthorized" });
-};
-
-// Extend session type
-declare module "express-session" {
-  interface SessionData {
-    userId: string;
-    user: {
-      id: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-    };
-  }
-}
-
 export async function registerRoutes(app: Express): Promise<void> {
   // =====================
-  // AUTH ROUTES
+  // AUTH ROUTES (MOCKED)
   // =====================
 
-  // Get current user
-  app.get("/api/auth/user", (req, res) => {
-    if (req.session && req.session.userId) {
-      res.json({ user: req.session.user });
-    } else {
-      res.json({ user: null });
-    }
+  // Helper to ensure default user and return user info
+  const getAppUser = async () => {
+    return await storage.upsertUser(DEFAULT_USER);
+  };
+
+  // Mocked auth user endpoint
+  app.get("/api/auth/user", async (req, res) => {
+    const user = await getAppUser();
+    res.json({ user });
   });
 
-  // Demo login - creates or gets a demo user
-  app.post("/api/auth/login", async (req, res) => {
+  // Setup user teams - automatically runs for the default user
+  app.post("/api/setup", async (req, res) => {
     try {
-      const { email, firstName, lastName } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: "Email is required" });
-      }
-
-      // Create a simple user ID from email
-      const userId = `user_${email.replace(/[^a-zA-Z0-9]/g, "_")}`;
-      
-      // Upsert user
-      const user = await storage.upsertUser({
-        id: userId,
-        email,
-        firstName: firstName || "Demo",
-        lastName: lastName || "User",
-      });
-
-      // Set session
-      req.session.userId = userId;
-      req.session.user = {
-        id: userId,
-        email: user.email || email,
-        firstName: user.firstName || "Demo",
-        lastName: user.lastName || "User",
-      };
-
-      res.json({ user: req.session.user });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
-
-  // Logout
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  // =====================
-  // SETUP ROUTE
-  // =====================
-
-  // Initialize user with default teams
-  app.post("/api/setup", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.session.userId;
+      const user = await getAppUser();
       
       // Check if user already has teams
-      const existingTeams = await storage.getUserTeams(userId);
+      const existingTeams = await storage.getUserTeams(user.id);
       if (existingTeams.length > 0) {
-        return res.json({ teams: existingTeams, message: "Already set up" });
+        return res.json({ message: "Setup already complete", teams: existingTeams });
       }
 
       // Create default insurance teams
-      const defaultTeams = [
-        { name: "Personal Lines", description: "Auto, Home, and Personal Insurance" },
-        { name: "Commercial", description: "Business and Commercial Insurance" },
-        { name: "Corporate", description: "Large Corporate Accounts" },
-        { name: "Claims", description: "Claims Processing and Management" },
+      const teamNames = [
+        "Personal Lines",
+        "Commercial",
+        "Corporate",
+        "Claims"
       ];
 
       const createdTeams = [];
-      for (const teamData of defaultTeams) {
-        const team = await storage.createTeam(teamData);
-        await storage.addUserToTeam(userId, team.id, "admin");
+      for (const name of teamNames) {
+        const team = await storage.createTeam({
+          name,
+          description: `${name} dedicated operations team`,
+        });
+        await storage.addUserToTeam(user.id, team.id, "admin");
         createdTeams.push(team);
       }
 
-      // Set first team as current
+      // Set the first team as current
       if (createdTeams.length > 0) {
-        await storage.updateUserCurrentTeam(userId, createdTeams[0].id);
+        await storage.updateUserCurrentTeam(user.id, createdTeams[0].id);
       }
 
-      res.json({ teams: createdTeams, message: "Setup complete" });
+      res.status(201).json({ message: "Setup successful", teams: createdTeams });
     } catch (error) {
       console.error("Setup error:", error);
-      res.status(500).json({ message: "Setup failed" });
+      res.status(500).json({ message: "Failed to initialize environment" });
     }
   });
 
@@ -173,9 +113,10 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get user's teams
-  app.get("/api/teams", isAuthenticated, async (req: any, res) => {
+  app.get("/api/teams", async (req, res) => {
     try {
-      const teams = await storage.getUserTeams(req.session.userId);
+      const user = await getAppUser();
+      const teams = await storage.getUserTeams(user.id);
       res.json(teams);
     } catch (error) {
       console.error("Error getting teams:", error);
@@ -184,10 +125,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Select active team
-  app.post("/api/teams/:id/select", isAuthenticated, async (req: any, res) => {
+  app.post("/api/teams/:id/select", async (req, res) => {
     try {
+      const user = await getAppUser();
       const teamId = parseInt(req.params.id);
-      await storage.updateUserCurrentTeam(req.session.userId, teamId);
+      await storage.updateUserCurrentTeam(user.id, teamId);
       res.json({ message: "Team selected" });
     } catch (error) {
       console.error("Error selecting team:", error);
@@ -200,9 +142,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get documents for current team
-  app.get("/api/documents", isAuthenticated, async (req: any, res) => {
+  app.get("/api/documents", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -215,9 +157,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Upload document
-  app.post("/api/documents/upload", isAuthenticated, upload.single("file"), async (req: any, res) => {
+  app.post("/api/documents/upload", upload.single("file"), async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -234,13 +176,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         mimeType: req.file.mimetype,
         category: req.body.category || "General",
         description: req.body.description || "",
-        uploadedBy: req.session.userId,
+        uploadedBy: user.id,
         teamId: user.currentTeamId,
       });
 
       // Log activity
       await storage.createActivityLog({
-        userId: req.session.userId,
+        userId: user.id,
         teamId: user.currentTeamId,
         action: "upload",
         entityType: "document",
@@ -256,9 +198,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Search documents
-  app.get("/api/documents/search", isAuthenticated, async (req: any, res) => {
+  app.get("/api/documents/search", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -281,9 +223,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get tasks for current team
-  app.get("/api/tasks", isAuthenticated, async (req: any, res) => {
+  app.get("/api/tasks", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -296,22 +238,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Create task
-  app.post("/api/tasks", isAuthenticated, async (req: any, res) => {
+  app.post("/api/tasks", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
 
       const task = await storage.createTask({
         ...req.body,
-        createdBy: req.session.userId,
+        createdBy: user.id,
         teamId: user.currentTeamId,
       });
 
       // Log activity
       await storage.createActivityLog({
-        userId: req.session.userId,
+        userId: user.id,
         teamId: user.currentTeamId,
         action: "create",
         entityType: "task",
@@ -327,15 +269,15 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update task
-  app.patch("/api/tasks/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/tasks/:id", async (req, res) => {
     try {
+      const user = await getAppUser();
       const taskId = parseInt(req.params.id);
       const task = await storage.updateTask(taskId, req.body);
 
-      const user = await storage.getUser(req.session.userId);
       if (user?.currentTeamId) {
         await storage.createActivityLog({
-          userId: req.session.userId,
+          userId: user.id,
           teamId: user.currentTeamId,
           action: "update",
           entityType: "task",
@@ -356,9 +298,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get meetings for current team
-  app.get("/api/meetings", isAuthenticated, async (req: any, res) => {
+  app.get("/api/meetings", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -371,22 +313,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Create meeting
-  app.post("/api/meetings", isAuthenticated, async (req: any, res) => {
+  app.post("/api/meetings", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
 
       const meeting = await storage.createMeeting({
         ...req.body,
-        organizer: req.session.userId,
+        organizer: user.id,
         teamId: user.currentTeamId,
       });
 
       // Log activity
       await storage.createActivityLog({
-        userId: req.session.userId,
+        userId: user.id,
         teamId: user.currentTeamId,
         action: "create",
         entityType: "meeting",
@@ -406,9 +348,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get email archives for current team
-  app.get("/api/email-archives", isAuthenticated, async (req: any, res) => {
+  app.get("/api/email-archives", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -421,22 +363,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Create email archive
-  app.post("/api/email-archives", isAuthenticated, async (req: any, res) => {
+  app.post("/api/email-archives", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
 
       const emailArchive = await storage.createEmailArchive({
         ...req.body,
-        archivedBy: req.session.userId,
+        archivedBy: user.id,
         teamId: user.currentTeamId,
       });
 
       // Log activity
       await storage.createActivityLog({
-        userId: req.session.userId,
+        userId: user.id,
         teamId: user.currentTeamId,
         action: "archive",
         entityType: "email",
@@ -452,9 +394,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Search email archives
-  app.get("/api/email-archives/search", isAuthenticated, async (req: any, res) => {
+  app.get("/api/email-archives/search", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -477,9 +419,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // =====================
 
   // Get dashboard metrics
-  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/metrics", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -492,9 +434,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get recent activity
-  app.get("/api/dashboard/recent-activity", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/recent-activity", async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await getAppUser();
       if (!user?.currentTeamId) {
         return res.status(400).json({ message: "No team selected" });
       }
@@ -505,5 +447,4 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.status(500).json({ message: "Failed to get recent activity" });
     }
   });
-
 }

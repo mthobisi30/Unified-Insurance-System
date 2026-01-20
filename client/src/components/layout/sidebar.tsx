@@ -44,7 +44,7 @@ export default function Sidebar() {
   const currentTeam = teams?.find(team => team.id === user?.currentTeamId);
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: BarChart3 },
+    { name: "Home", href: "/", icon: Shield },
     { name: "Documents", href: "/documents", icon: FileText },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Calendar", href: "/calendar", icon: Calendar },
@@ -53,10 +53,6 @@ export default function Sidebar() {
 
   const handleTeamChange = (teamId: string) => {
     selectTeamMutation.mutate(parseInt(teamId));
-  };
-
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
   };
 
   return (
@@ -132,18 +128,10 @@ export default function Sidebar() {
           </Avatar>
           <div className="flex-1">
             <p className="text-sm font-medium text-neutral-900">
-              {user?.firstName} {user?.lastName}
+              {user?.firstName || "Guest User"}
             </p>
-            <p className="text-xs text-neutral-700">Team Member</p>
+            <p className="text-xs text-neutral-700">System Operator</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-neutral-500 hover:text-neutral-700"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </div>

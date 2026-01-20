@@ -14,58 +14,18 @@ import FileUploadModal from "@/components/modals/file-upload-modal";
 
 export default function Dashboard() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
 
   // Setup user teams on first visit
   useEffect(() => {
-    if (isAuthenticated) {
-      const setupUser = async () => {
-        try {
-          await apiRequest("POST", "/api/setup");
-        } catch (error) {
-          if (isUnauthorizedError(error as Error)) {
-            toast({
-              title: "Unauthorized",
-              description: "You are logged out. Logging in again...",
-              variant: "destructive",
-            });
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 500);
-            return;
-          }
-          // Ignore setup errors as user might already be set up
-        }
-      };
-      setupUser();
-    }
-  }, [isAuthenticated, toast]);
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+    const setupUser = async () => {
+      try {
+        await apiRequest("POST", "/api/setup");
+      } catch (error) {
+        // Ignore setup errors as environment might already be initialized
+      }
+    };
+    setupUser();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-100">

@@ -6,6 +6,8 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  profileImageUrl?: string | null;
+  currentTeamId?: number | null;
 }
 
 interface AuthResponse {
@@ -13,40 +15,21 @@ interface AuthResponse {
 }
 
 export function useAuth() {
-  const queryClient = useQueryClient();
-
-  const { data, isLoading } = useQuery<AuthResponse>({
-    queryKey: ["/api/auth/user"],
-    retry: false,
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; firstName?: string; lastName?: string }) => {
-      const response = await apiRequest("POST", "/api/auth/login", credentials);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    },
-  });
-
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/auth/logout");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    },
-  });
+  const user: User = {
+    id: "default-user",
+    email: "user@example.com",
+    firstName: "Guest",
+    lastName: "User",
+  };
 
   return {
-    user: data?.user,
-    isLoading,
-    isAuthenticated: !!data?.user,
-    login: loginMutation.mutate,
-    loginAsync: loginMutation.mutateAsync,
-    logout: logoutMutation.mutate,
-    isLoggingIn: loginMutation.isPending,
-    isLoggingOut: logoutMutation.isPending,
+    user,
+    isLoading: false,
+    isAuthenticated: true,
+    login: () => {},
+    loginAsync: async () => {},
+    logout: () => {},
+    isLoggingIn: false,
+    isLoggingOut: false,
   };
 }
