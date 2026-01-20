@@ -8,7 +8,7 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Detailed logging for Vercel
+// Logging for Vercel
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
   next();
@@ -48,18 +48,10 @@ app.use(
   })
 );
 
-// Register routes with error handling
-try {
-  await registerRoutes(app);
-} catch (error) {
-  console.error("FATAL: Failed to register routes:", error);
-  app.use((req, res) => {
-    res.status(500).json({ 
-      message: "Server failed to initialize", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
-  });
-}
+// We perform route registration. 
+// Note: In serverless, top-level await is generally supported in newer Node runtimes.
+// If this continues to fail, we may need to use a middleware that waits for initialization.
+await registerRoutes(app);
 
 // Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -67,7 +59,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   res.status(status).json({ 
     message: err.message || "Internal Server Error",
-    error_details: err.stack // Show stack trace for debugging
+    error_details: err.stack
   });
 });
 
