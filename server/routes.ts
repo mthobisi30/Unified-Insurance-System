@@ -7,7 +7,11 @@ import fs from "fs";
 import { storage } from "./storage";
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), "uploads");
+// On Vercel, the only writable directory is /tmp
+const uploadsDir = process.env.VERCEL 
+  ? path.join("/tmp", "uploads")
+  : path.join(process.cwd(), "uploads");
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
