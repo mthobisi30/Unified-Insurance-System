@@ -40,21 +40,6 @@ const upload = multer({
   },
 });
 
-// Session configuration
-function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  return session({
-    secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: sessionTtl,
-    },
-  });
-}
-
 // Simple authentication middleware - for demo purposes
 // In production, implement proper authentication (e.g., NextAuth, Passport with providers)
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -78,9 +63,6 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session middleware
-  app.use(getSession());
-
   // =====================
   // AUTH ROUTES
   // =====================

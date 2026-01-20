@@ -1,14 +1,24 @@
 import express from "express";
 import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { registerRoutes } from "../server/routes";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const PostgresStore = connectPg(session);
+const sessionStore = new PostgresStore({
+  conString: process.env.DATABASE_URL,
+  createTableIfMissing: false, // Table already exists in schema
+  tableName: "sessions",
+});
 
 // Session configuration for serverless
 app.use(
   session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "fallback-secret",
     resave: false,
     saveUninitialized: false,
