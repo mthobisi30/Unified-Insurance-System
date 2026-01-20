@@ -1,10 +1,22 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Shield, FileText, Calendar, Mail, Users, BarChart3 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const { login, isLoggingIn } = useAuth();
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      login({ email, firstName, lastName });
+    }
   };
 
   return (
@@ -101,19 +113,52 @@ export default function Landing() {
           </Card>
         </div>
 
-        {/* CTA Section */}
+        {/* Login Form */}
         <div className="text-center">
           <Card className="max-w-md mx-auto">
             <CardHeader>
-              <CardTitle>Ready to Get Started?</CardTitle>
+              <CardTitle>Sign In to Get Started</CardTitle>
               <CardDescription>
-                Join your insurance operations team and start streamlining workflows today.
+                Enter your email to join your insurance operations team.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleLogin} className="w-full" size="lg">
-                Sign In to Continue
-              </Button>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" size="lg" disabled={isLoggingIn}>
+                  {isLoggingIn ? "Signing In..." : "Sign In"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </div>
