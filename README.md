@@ -1,88 +1,66 @@
 # Unified Insurance Operations System
 
-A comprehensive platform designed to streamline the day-to-day operations of insurance teams, including Personal Lines, Commercial, Corporate, and Claims. The system integrates document filing, email archiving, task management, and meeting scheduling, all within a single unified platform.
+A streamlined, auth-free "Operations Control Center" designed for insurance teams (Personal Lines, Commercial, Corporate, and Claims). This platform centralizes document filing, email archiving, task management, and meeting scheduling into a single unified dashboard, built for fast internal operations.
 
 ## Features
 
+### Unified Home Dashboard
+- **Operations Control Center**: A high-fidelity landing page with direct access to all system modules.
+- **Real-time Metrics**: Instant overview of active tasks, documents filed today, scheduled meetings, and pending reviews.
+- **Direct Navigation**: Seamless transition between Documents, Tasks, Calendar, and Email Archive without any login barriers.
+
 ### Document Management
-- **File Upload & Storage**: Upload PDF, Word, and Excel documents up to 10MB
-- **Categorization**: Organize documents by type (Policy Documents, Claims Reports, Financial Reports, etc.)
-- **Search Functionality**: Full-text search across document names, descriptions, and categories
-- **Team-based Organization**: Documents are isolated by team for security and organization
-- **Status Tracking**: Track document approval status (pending, approved, rejected)
+- **File Upload & Storage**: Upload PDF, Word, and Excel documents up to 10MB.
+- **Categorization**: Organize documents by type (Policies, Claims, Financials, etc.).
+- **Search Functionality**: Powerful search across document names, descriptions, and categories.
+- **Team-based Organization**: Isolated team environments (Personal, Commercial, Corporate, Claims).
 
 ### Task Management
-- **Task Creation**: Create tasks with titles, descriptions, and priority levels
-- **Assignment System**: Assign tasks to team members with due dates
-- **Priority Levels**: Low, medium, and high priority task classification
-- **Status Tracking**: Track task progress (pending, in-progress, completed)
-- **Calendar Integration**: Due date management with calendar interface
+- **Task Tracking**: Create and track operational tasks with priority levels (Low, Medium, High).
+- **Status Workflow**: Manage task lifecycle from pending to completion.
+- **Calendar Integration**: Visual overview of task deadlines in a calendar interface.
 
 ### Meeting Scheduling
-- **Calendar Interface**: Visual calendar for scheduling and viewing meetings
-- **Meeting Details**: Include location, video links, and descriptions
-- **Team Coordination**: Schedule meetings within team context
-- **Status Management**: Track meeting status (scheduled, completed, cancelled)
+- **Meeting Hub**: Schedule team strategy and claims review meetings.
+- **Coordination**: Include location and video links for easy accessibility.
+- **Sync Ready**: Designed for integration with organizational calendars.
 
 ### Email Archiving
-- **Email Storage**: Archive important emails with full content preservation
-- **Metadata Capture**: Store sender, recipient, date, and subject information
-- **Categorization**: Organize archived emails by category and tags
-- **Search Capability**: Search through archived email content and metadata
-
-### Team Management
-- **Multi-team Support**: Separate workspaces for different insurance teams
-- **Team Switching**: Easy switching between teams (Personal Lines, Commercial, Corporate, Claims)
-- **Role-based Access**: Team member and admin role management
-- **Data Isolation**: Team-based data separation for security
-
-### Dashboard & Analytics
-- **Real-time Metrics**: Active tasks, documents filed today, meetings scheduled, pending reviews
-- **Recent Activity**: Live feed of team activities across all modules
-- **Quick Actions**: Fast access to common operations
-- **Performance Tracking**: Visual indicators and progress tracking
+- **Permanent Storage**: Archive client and provider emails with full content preservation.
+- **Searchable Database**: Quickly find past communications by subject, sender, or date.
+- **Organization**: Tag and categorize emails for long-term records management.
 
 ## Tech Stack
 
 ### Frontend
-- **React 18** with TypeScript for type safety
-- **Vite** for fast development and optimized builds
-- **Tailwind CSS** with shadcn/ui components for modern UI
-- **TanStack Query** for efficient server state management
-- **Wouter** for lightweight client-side routing
-- **React Hook Form** with Zod validation
+- **React 18** + TypeScript
+- **Vite** for optimized performance
+- **Tailwind CSS** + shadcn/ui for high-end operations design
+- **TanStack Query** for efficient data fetching and caching
+- **Wouter** for lightweight routing
+- **Lucide React** for consistent iconography
 
 ### Backend
-- **Node.js** with Express.js framework
-- **TypeScript** with ES modules for type safety
-- **Replit Auth** with OpenID Connect for authentication
-- **Multer** for file upload handling
-- **Express Session** with PostgreSQL storage
+- **Node.js** + Express.js
+- **Stateless Architecture**: No session management or auth overhead for maximum speed
+- **Multer**: High-performance file upload handling
+- **PostgreSQL**: Robust data persistence via Neon Serverless
 
-### Database
-- **PostgreSQL** with Neon serverless connection
-- **Drizzle ORM** for type-safe database operations
-- **Connection pooling** for optimal performance
-- **Automated migrations** with Drizzle Kit
+### Database & Tooling
+- **Drizzle ORM**: Type-safe database operations
+- **Neon**: Serverless PostgreSQL for scalability
+- **GitHub**: Integrated version control and Vercel deployment sync
 
-### Development Tools
-- **TypeScript** for full-stack type safety
-- **PostCSS** with Tailwind CSS processing
-- **ESLint** and **Prettier** for code quality
-- **Hot Module Replacement** for fast development
-
-## Installation
+## Installation & Setup
 
 ### Prerequisites
 - Node.js 18+ 
-- PostgreSQL database
-- Git
+- PostgreSQL database (e.g., Neon.tech)
 
-### Setup Steps
-
+### Steps
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/unified-insurance-system.git
+   git clone https://github.com/mthobisi30/Unified-Insurance-System.git
    cd unified-insurance-system
    ```
 
@@ -92,12 +70,9 @@ A comprehensive platform designed to streamline the day-to-day operations of ins
    ```
 
 3. **Environment Configuration**
-   Create a `.env` file with the following variables:
+   Create a `.env` file:
    ```env
    DATABASE_URL=your_postgresql_connection_string
-   SESSION_SECRET=your_session_secret_key
-   REPLIT_DOMAINS=your_domain.com
-   ISSUER_URL=https://replit.com/oidc
    NODE_ENV=development
    ```
 
@@ -106,137 +81,37 @@ A comprehensive platform designed to streamline the day-to-day operations of ins
    npm run db:push
    ```
 
-5. **Start Development Server**
+5. **Start Application**
    ```bash
    npm run dev
    ```
 
-6. **Access the Application**
-   Open your browser to `http://localhost:5000`
-
 ## Project Structure
-
 ```
-├── client/                 # Frontend React application
+├── client/                 # React Frontend
 │   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Application pages
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utility functions
-│   │   └── App.tsx         # Main application component
-├── server/                 # Backend Express application
-│   ├── db.ts              # Database connection
-│   ├── routes.ts          # API route definitions
-│   ├── storage.ts         # Data access layer
-│   ├── replitAuth.ts      # Authentication setup
-│   └── index.ts           # Server entry point
-├── shared/                 # Shared types and schemas
-│   └── schema.ts          # Database schema and types
-└── uploads/               # File upload directory
+│   │   ├── components/     # UI Design System
+│   │   ├── pages/          # Home, Documents, Tasks, etc.
+│   │   └── hooks/          # useAuth (Mocked), Query hooks
+├── server/                 # Express Backend
+│   ├── routes.ts           # Stateless API Endpoints
+│   ├── storage.ts          # Data Access Layer
+│   └── index.ts            # Local Server Entry
+├── api/                    # Vercel Serverless Entry
+├── shared/                 # Shared Schemas & Types
+└── uploads/                # Local File Storage (/tmp on Vercel)
 ```
-
-## API Endpoints
-
-### Authentication
-- `GET /api/auth/user` - Get current user information
-- `GET /api/login` - Initiate login flow
-- `GET /api/logout` - Logout user
-- `POST /api/setup` - Initialize user teams
-
-### Teams
-- `GET /api/teams` - Get user teams
-- `POST /api/teams/:id/select` - Select active team
-
-### Documents
-- `GET /api/documents` - Get team documents
-- `POST /api/documents/upload` - Upload documents
-- `GET /api/documents/search` - Search documents
-
-### Tasks
-- `GET /api/tasks` - Get team tasks
-- `POST /api/tasks` - Create new task
-- `PATCH /api/tasks/:id` - Update task
-
-### Meetings
-- `GET /api/meetings` - Get team meetings
-- `POST /api/meetings` - Schedule meeting
-
-### Email Archives
-- `GET /api/email-archives` - Get archived emails
-- `POST /api/email-archives` - Archive email
-
-### Dashboard
-- `GET /api/dashboard/metrics` - Get dashboard metrics
-- `GET /api/dashboard/recent-activity` - Get recent activity
-
-## Development
-
-### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run db:push` - Push database schema changes
-- `npm run db:studio` - Open Drizzle Studio
-
-### Database Schema
-The application uses a normalized PostgreSQL schema with the following main tables:
-- `users` - User accounts and profiles
-- `teams` - Insurance team definitions
-- `team_members` - User-team relationships
-- `documents` - File metadata and storage info
-- `tasks` - Task management and assignments
-- `meetings` - Calendar and meeting data
-- `email_archives` - Archived email storage
-- `activity_log` - System activity tracking
-- `sessions` - User session storage
 
 ## Deployment
+This project is optimized for **Vercel**.
+- **Static Frontend**: Vite builds the client to `dist/public`.
+- **Serverless API**: `api/index.ts` handles the Express backend.
+- **Read-Only Fix**: File uploads use `/tmp` for serverless compatibility.
 
-### Production Build
-```bash
-npm run build
-npm start
-```
-
-### Environment Variables
-Ensure all production environment variables are configured:
-- `DATABASE_URL` - Production database connection
-- `SESSION_SECRET` - Secure session encryption key
-- `REPLIT_DOMAINS` - Production domain(s)
-- `NODE_ENV=production`
-
-### Database Migration
-```bash
-npm run db:push
-```
-
-## Security Features
-
-- **Session-based Authentication** with secure cookie handling
-- **Team-based Data Isolation** for multi-tenant security
-- **File Upload Validation** with type and size restrictions
-- **SQL Injection Protection** through parameterized queries
-- **CSRF Protection** with secure session management
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support and questions:
-- Create an issue in the GitHub repository
-- Check the documentation in the `/docs` folder
-- Review the API documentation above
+## Security
+- **Internal Access**: Designed as a standalone operations tool.
+- **Stateless**: No cookies or session tokens required for internal use.
+- **Validation**: Strict file type and database schema validation.
 
 ---
-
-**Built with modern web technologies for insurance operations teams**
+**Unified Insurance Operations System | Streamlining Claims and Policies**
